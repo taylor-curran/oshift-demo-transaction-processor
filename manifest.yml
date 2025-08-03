@@ -1,0 +1,52 @@
+---
+applications:
+- name: transaction-processor
+  instances: 5
+  memory: 2048M
+  disk_quota: 4G
+  stack: cflinuxfs4
+  buildpacks:
+    - java_buildpack
+  path: ./target/transaction-processor-2.0.1.jar
+  
+  env:
+    SPRING_PROFILES_ACTIVE: production,high-throughput
+    JBP_CONFIG_OPEN_JDK_JRE: '[jre: {version: 17.+}]'
+    JVM_OPTS: "-Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+    
+    # High-throughput processing
+    PROCESSOR_THREAD_POOL_SIZE: 50
+    BATCH_SIZE: 1000
+    PROCESSING_TIMEOUT_MS: 5000
+    
+    # Kafka Configuration
+    KAFKA_BOOTSTRAP_SERVERS: "kafka-cluster:9092"
+    KAFKA_CONSUMER_GROUP: "transaction-processors"
+    KAFKA_AUTO_OFFSET_RESET: "earliest"
+    KAFKA_MAX_POLL_RECORDS: 500
+    
+    # Database sharding
+    DB_SHARD_COUNT: 4
+    DB_WRITE_TIMEOUT: 3000
+    DB_READ_TIMEOUT: 1000
+    
+    # Circuit breaker
+    HYSTRIX_ENABLED: true
+    CIRCUIT_BREAKER_THRESHOLD: 20
+    
+  services:
+    - transaction-kafka
+    - transaction-db-shard-1
+    - transaction-db-shard-2
+    - transaction-db-shard-3
+    - transaction-db-shard-4
+    - transaction-redis-cluster
+    - audit-service
+    - metrics-collector
+    
+  routes:
+    - route: transaction-processor.internal.banking.com
+      
+  health-check-type: http
+  health-check-http-endpoint: /actuator/health
+  health-check-invocation-timeout: 15
