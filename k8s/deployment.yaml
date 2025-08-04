@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-processor
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: openshift
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: transaction-processor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: transaction-processor
+        app.kubernetes.io/version: "2.0.1"
+        app.kubernetes.io/part-of: banking-platform
+        environment: dev
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: transaction-processor
+        image: taycurran/transaction-processor:2.0.1
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: "300m"
+            memory: "1200Mi"
+          limits:
+            cpu: "1000m"
+            memory: "2048Mi"
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production,high-throughput"
+        - name: PROCESSOR_THREAD_POOL_SIZE
+          value: "50"
+        - name: BATCH_SIZE
+          value: "1000"
+        - name: PROCESSING_TIMEOUT_MS
+          value: "5000"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          valueFrom:
+            configMapKeyRef:
+              name: transaction-processor-config
+              key: KAFKA_BOOTSTRAP_SERVERS
+        - name: KAFKA_CONSUMER_GROUP
+          value: "transaction-processors"
+        - name: KAFKA_AUTO_OFFSET_RESET
+          value: "earliest"
+        - name: KAFKA_MAX_POLL_RECORDS
+          value: "500"
+        - name: DB_SHARD_COUNT
+          value: "4"
+        - name: DB_WRITE_TIMEOUT
+          value: "3000"
+        - name: DB_READ_TIMEOUT
+          value: "1000"
+        - name: HYSTRIX_ENABLED
+          value: "true"
+        - name: CIRCUIT_BREAKER_THRESHOLD
+          value: "20"
+        - name: DATABASE_URL_SHARD_1
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: DATABASE_URL_SHARD_1
+        - name: DATABASE_URL_SHARD_2
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: DATABASE_URL_SHARD_2
+        - name: DATABASE_URL_SHARD_3
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: DATABASE_URL_SHARD_3
+        - name: DATABASE_URL_SHARD_4
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: DATABASE_URL_SHARD_4
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: REDIS_URL
+        - name: AUDIT_SERVICE_URL
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: AUDIT_SERVICE_URL
+        - name: METRICS_COLLECTOR_URL
+          valueFrom:
+            secretKeyRef:
+              name: transaction-processor-creds
+              key: METRICS_COLLECTOR_URL
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: logs-volume
+          mountPath: /deployments/logs
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: logs-volume
+        emptyDir: {}
