@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-processor
+  namespace: transaction-processor
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: openshift
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: transaction-processor
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
