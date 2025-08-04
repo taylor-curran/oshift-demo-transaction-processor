@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: transaction-processor
+  namespace: transaction-processor
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: openshift
+spec:
+  to:
+    kind: Service
+    name: transaction-processor
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
