@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pe-eng-transaction-processor-dev
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: transaction-processor
+      environment: dev
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: transaction-processor
+        app.kubernetes.io/version: "2.0.1"
+        app.kubernetes.io/part-of: banking-platform
+        environment: dev
+        managed-by: helm
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: transaction-processor
+        securityContext:
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        image: "registry.bank.internal/transaction-processor:2.0.1"
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            memory: "1200Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production,high-throughput"
+        - name: JBP_CONFIG_OPEN_JDK_JRE
+          value: '[jre: {version: 17.+}]'
+        - name: JVM_OPTS
+          value: "-Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+        - name: SERVER_PORT
+          value: "8080"
+        - name: PROCESSOR_THREAD_POOL_SIZE
+          value: "50"
+        - name: BATCH_SIZE
+          value: "1000"
+        - name: PROCESSING_TIMEOUT_MS
+          value: "5000"
+        - name: DB_SHARD_COUNT
+          value: "4"
+        - name: DB_WRITE_TIMEOUT
+          value: "3000"
+        - name: DB_READ_TIMEOUT
+          value: "1000"
+        - name: HYSTRIX_ENABLED
+          value: "true"
+        - name: CIRCUIT_BREAKER_THRESHOLD
+          value: "20"
+        envFrom:
+        - configMapRef:
+            name: pe-eng-transaction-processor-kafka-config
+        - secretRef:
+            name: pe-eng-transaction-processor-kafka-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-db-shard-1-config
+        - secretRef:
+            name: pe-eng-transaction-processor-db-shard-1-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-db-shard-2-config
+        - secretRef:
+            name: pe-eng-transaction-processor-db-shard-2-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-db-shard-3-config
+        - secretRef:
+            name: pe-eng-transaction-processor-db-shard-3-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-db-shard-4-config
+        - secretRef:
+            name: pe-eng-transaction-processor-db-shard-4-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-redis-cluster-config
+        - secretRef:
+            name: pe-eng-transaction-processor-redis-cluster-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-audit-service-config
+        - secretRef:
+            name: pe-eng-transaction-processor-audit-service-secret
+        - configMapRef:
+            name: pe-eng-transaction-processor-metrics-collector-config
+        - secretRef:
+            name: pe-eng-transaction-processor-metrics-collector-secret
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 15
+          failureThreshold: 3
+        volumeMounts:
+        - name: tmp-storage
+          mountPath: /tmp
+        - name: app-logs
+          mountPath: /tmp/app-logs
+      volumes:
+      - name: tmp-storage
+        emptyDir: {}
+      - name: app-logs
+        emptyDir: {}
