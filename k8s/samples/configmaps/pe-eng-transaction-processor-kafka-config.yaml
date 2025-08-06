@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-kafka-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  brokers: "kafka-cluster:9092"
+  consumer-group: "transaction-processors"
+  auto-offset-reset: "earliest"
+  max-poll-records: "500"
+  batch-size: "1000"
+  linger-ms: "10"
+  acks: "all"
+  retries: "3"
