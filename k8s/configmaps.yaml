@@ -1,0 +1,161 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-kafka-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  brokers: "kafka-broker1:9092,kafka-broker2:9092,kafka-broker3:9092"
+  consumer-group: "transaction-processors"
+  auto-offset-reset: "earliest"
+  max-poll-records: "500"
+  batch-size: "1000"
+  linger-ms: "10"
+  acks: "all"
+  retries: "3"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-db-shard-1-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  host: "transaction-db-shard-1-hostname"
+  port: "5432"
+  database: "transaction_shard_1"
+  connection-params: "sslmode=require&application_name=transaction-processor"
+  max-connections: "25"
+  connection-timeout: "30"
+  write-timeout: "3000"
+  read-timeout: "1000"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-db-shard-2-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  host: "transaction-db-shard-2-hostname"
+  port: "5432"
+  database: "transaction_shard_2"
+  connection-params: "sslmode=require&application_name=transaction-processor"
+  max-connections: "25"
+  connection-timeout: "30"
+  write-timeout: "3000"
+  read-timeout: "1000"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-db-shard-3-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  host: "transaction-db-shard-3-hostname"
+  port: "5432"
+  database: "transaction_shard_3"
+  connection-params: "sslmode=require&application_name=transaction-processor"
+  max-connections: "25"
+  connection-timeout: "30"
+  write-timeout: "3000"
+  read-timeout: "1000"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-db-shard-4-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  host: "transaction-db-shard-4-hostname"
+  port: "5432"
+  database: "transaction_shard_4"
+  connection-params: "sslmode=require&application_name=transaction-processor"
+  max-connections: "25"
+  connection-timeout: "30"
+  write-timeout: "3000"
+  read-timeout: "1000"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-redis-cluster-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  cluster-nodes: "redis-node1:6379,redis-node2:6379,redis-node3:6379"
+  port: "6379"
+  timeout: "5000"
+  max-connections: "50"
+  connection-pool-size: "20"
+  retry-attempts: "3"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-audit-service-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  base-url: "https://audit-service.internal.banking.com"
+  timeout: "10000"
+  retry-attempts: "3"
+  retry-delay: "1000"
+  batch-size: "100"
+  flush-interval: "30"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pe-eng-transaction-processor-metrics-collector-config
+  labels:
+    app.kubernetes.io/name: transaction-processor
+    app.kubernetes.io/version: "2.0.1"
+    app.kubernetes.io/part-of: banking-platform
+    environment: dev
+    managed-by: helm
+data:
+  endpoint: "https://metrics-collector.internal.banking.com"
+  collection-interval: "60"
+  batch-size: "200"
+  timeout: "15000"
+  retry-attempts: "2"
+  buffer-size: "1000"
